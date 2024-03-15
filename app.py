@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 import numpy as np
 import joblib
@@ -17,11 +17,15 @@ def process_input(age, sleep_duration, quality_of_sleep, physical_activity_level
     })
     return data
 
-def predict_sleep_disorder(input_data):
-    scaler = MinMaxScaler()
-    input_data_scaled = scaler.fit_transform(input_data)
-    prediction = svm_model.predict(input_data_scaled)
-    return prediction
+def predict_sleep_disorder(age, sleep_duration, quality_of_sleep, physical_activity_level, stress_level, heart_rate, daily_steps):
+    data = np.array([[age, sleep_duration, quality_of_sleep, physical_activity_level, stress_level, heart_rate, daily_steps]])
+    combined_data = np.vstack((X_test, data))
+    scaler = StandardScaler()
+    combined_data_scaled = scaler.fit_transform(combined_data)
+    scaled_test_value = combined_data_scaled[-1, :]  
+    scaled_test_value_reshaped = scaled_test_value.reshape(1, -1)
+    predicted_sleep_disorder = svm_model.predict(scaled_test_value_reshaped)
+    return predicted_sleep_disorder
 
 def main():
     st.title('Sleep Disorder Prediction')
@@ -36,10 +40,10 @@ def main():
     daily_steps = st.slider('Daily Steps', min_value=0, max_value=20000, value=6000)
 
     if st.button('Predict'):
-        input_data = process_input(age, sleep_duration, quality_of_sleep, physical_activity_level, stress_level, heart_rate, daily_steps)
-        prediction = predict_sleep_disorder(input_data)
+        prediction = predict_sleep_disorder(age, sleep_duration, quality_of_sleep, physical_activity_level, stress_level, heart_rate, daily_steps)
         st.write('Predicted Sleep Disorder:', prediction)
 
 if __name__ == '__main__':
     svm_model = joblib.load('svm_linear_model.pkl')  
+    X_test = joblib.load('x_test.pkl')
     main()
